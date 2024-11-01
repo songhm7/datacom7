@@ -14,9 +14,8 @@ rockImage = ['asset/rock1.png','asset/rock2.png','asset/rock3.png','asset/rock4.
 
 def acceptC():
     global client
-    # 현재 컴퓨터의 IPv4 주소를 자동으로 얻어오기
-    host_ip = socket.gethostbyname(socket.gethostname())
-    print(f"Server started at {host_ip}:8080")  # 서버의 IP를 출력
+    host_ip = input("서버 주소 입력 : ")
+    # host_ip = socket.gethostbyname(socket.gethostname()) // 개발중 빠른 재기동을 위한 라인
     client=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     client.connect((host_ip,8080))
 

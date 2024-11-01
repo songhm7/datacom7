@@ -16,7 +16,7 @@ def acceptC():
     global client,server,addr
      # 현재 컴퓨터의 IPv4 주소를 자동으로 얻어오기
     host_ip = socket.gethostbyname(socket.gethostname())
-    print(f"Server started at {host_ip}:8080")  # 서버의 IP를 출력
+    print(f"클라이언트에서 다음 주소 입력 : {host_ip}")  # 서버의 IP를 출력
     server=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     server.bind((host_ip,8080))
     server.listen()

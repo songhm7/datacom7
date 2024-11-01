@@ -1,3 +1,4 @@
+#client.py
 import pygame
 import pyautogui
 import sys
@@ -33,9 +34,7 @@ def consoles():
 
 def acceptC():
     global client
-    # 현재 컴퓨터의 IPv4 주소를 자동으로 얻어오기
-    host_ip = socket.gethostbyname(socket.gethostname())
-    print(f"Server started at {host_ip}:8080")  # 서버의 IP를 출력
+    host_ip = input("서버 주소 입력 : ")
     client=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     client.connect((host_ip,8080))
 
