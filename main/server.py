@@ -28,11 +28,16 @@ def acceptC():
     thr.Daemon=True
     thr.start()
 
+#여기에 데이터를 받았을때 해야 할 일을 넣어야함
 def consoles():
-    #여기에 데이터를 받았을때 해야 할 일을 넣어야함
     while True:
         msg=client.recv(1024)
         print(msg.decode())
+        if msg=="quit":
+            client.close()
+            server.close()
+            pygame.quit()
+            sys.exit()
 
 # 게임에 등장하는 객체를 드로잉
 def drawObject(obj, x, y):
@@ -63,8 +68,6 @@ def runGame():
     rock, rockWidth, rockHeight, rockX, rockY = createRandomRock()
     rockSpeed = 2
 
-
-
     # 전투기 크기
     fighterSize = fighter.get_rect().size
     fighterWidth = fighterSize[0]
@@ -84,6 +87,8 @@ def runGame():
     while not onGame:
         for event in pygame.event.get():
             if event.type in [pygame.QUIT]: # 게임 프로그램 종료
+                client.close()
+                server.close()
                 pygame.quit()
                 sys.exit()
             

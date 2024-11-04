@@ -14,8 +14,8 @@ rockImage = ['asset/rock1.png','asset/rock2.png','asset/rock3.png','asset/rock4.
 
 def acceptC():
     global client
-    host_ip = input("서버 주소 입력 : ")
-    # host_ip = socket.gethostbyname(socket.gethostname()) // 개발중 빠른 재기동을 위한 라인
+    #host_ip = input("서버 주소 입력 : ")
+    host_ip = socket.gethostbyname(socket.gethostname()) #개발중 빠른 재기동을 위한 라인
     client=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     client.connect((host_ip,8080))
 
@@ -23,10 +23,12 @@ def acceptC():
     thr.Daemon=True
     thr.start()
 
+#여기에 데이터를 받았을때 해야 할 일을 넣어야함
 def consoles():
-    #여기에 데이터를 받았을때 해야 할 일을 넣어야함
     while True:
         msg=client.recv(1024)
+        if not msg:
+            break # 서버가 연결을 끊으면 루프 종료
         print(msg.decode())
 
 # 게임에 등장하는 객체를 드로잉
@@ -58,8 +60,6 @@ def runGame():
     rock, rockWidth, rockHeight, rockX, rockY = createRandomRock()
     rockSpeed = 2
 
-
-
     # 전투기 크기
     fighterSize = fighter.get_rect().size
     fighterWidth = fighterSize[0]
@@ -79,6 +79,7 @@ def runGame():
     while not onGame:
         for event in pygame.event.get():
             if event.type in [pygame.QUIT]: # 게임 프로그램 종료
+                client.close()
                 pygame.quit()
                 sys.exit()
             
@@ -175,7 +176,6 @@ def runGame():
     pygame.quit()   #pygame 종료
 
 # 랜덤 운석 생성 함수
-# 추후 랜덤위치가 아닌 서버플레이어가 결정하도록 수정할 것
 def createRandomRock():
     rock = pygame.transform.scale(pygame.image.load(random.choice(rockImage)), (50, 50))
     rockSize = rock.get_rect().size
