@@ -44,8 +44,8 @@ def consoles():
         elif msg.startswith("explosion"):
             _, exX, exY, shotCount = msg.split()
             drawObject(explosion, int(exX), int(exY)) #운석 폭발 그리기
-            pygame.display.update()
         print(msg)
+        pygame.display.update()
 
 # 게임에 등장하는 객체를 드로잉
 def drawObject(obj, x, y):
@@ -75,13 +75,12 @@ def runGame():
 
     # 운석 위치 및 크기 초기화 플래기
     rock_initialized = False
-    rockSpeed = 2
 
     # 전투기 크기 및 초기 위치 설정
     fighterSize = fighter.get_rect().size
     fighterWidth = fighterSize[0]
     fighterHeight = fighterSize[1]
-    x = padWidth * 0.45
+    x = padWidth * 0.6
     y = padHeight * 0.9
     fighterX = 0
 
@@ -90,6 +89,8 @@ def runGame():
     shotCount = 0   # 적중횟수
     rockPassed = 0  # 격추 실패 횟수
     iscrashed = False
+    
+    moving_left = moving_right = False  # 이동 상태 추적용 플래그
 
     onGame = False
     while not onGame:
@@ -101,9 +102,11 @@ def runGame():
             
             if event.type in [pygame.KEYDOWN]:
                 if event.key == pygame.K_LEFT:  # 전투기 왼쪽으로 이동
+                    moving_left = True
                     fighterX -= 5
                 
                 elif event.key == pygame.K_RIGHT:   # 전투기 오른쪽으로 이동
+                    moving_right = True
                     fighterX += 5
                 
                 elif event.key == pygame.K_SPACE:   # 미사일 발사
@@ -116,6 +119,8 @@ def runGame():
             if event.type in [pygame.KEYUP]:    #방향키를 떼면 전투기 멈춤
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                     fighterX = 0
+                    moving_left = False
+                    moving_right = False
 
         drawObject(background, 0, 0) # 배경 화면 그리기
 
@@ -127,14 +132,15 @@ def runGame():
             x = padWidth - fighterWidth
 
         drawObject(fighter, x, y)   # 비행기를 게임 화면의 (x, y) 좌표에 그림
+        if moving_left or moving_right:
+            client.sendall(f"fighter2 {str(int(x))}".encode())
  
         # 운석 정보가 초기화된 이후에만 충돌 판정 수행
         if rock_initialized:
-            
             # 전투기가 운석과 충돌했는지 체크
             if iscrashed :
                 crash()
-        
+            '''
             # 미사일 발사 화면에 그리기
             if len(missileXY) != 0:
                 for i, bxy in enumerate(missileXY): # 미사일 요소에 대해 반복함
@@ -156,7 +162,7 @@ def runGame():
             if len(missileXY) != 0:
                 for bx, by in missileXY:
                     drawObject(missile, bx, by)
-
+            '''
             #rockY += rockSpeed  # 운석 아래로 움직임
             
             # 운석이 지구로 떨어진 경우
@@ -166,16 +172,16 @@ def runGame():
             # 운석을 맞춘 경우 
             if isShot:
                 # 운석 폭발
-                drawObject(explosion, rockX, rockY) #운석 폭발 그리기
+                #drawObject(explosion, rockX, rockY) #운석 폭발 그리기
 
                 # 새로운 운석 (랜덤)
                 # rock, rockWidth, rockHeight, rockX, rockY = createRandomRock()
                 isShot = False
 
                 # 운석 맞추면 속도 증가
-                rockSpeed += 0.02
-                if rockSpeed >= 10:
-                    rockSpeed = 10
+                #rockSpeed += 0.02
+                #if rockSpeed >= 10:
+                    #rockSpeed = 10
 
             #운석 그리기
             drawObject(rock, rockX, rockY)   

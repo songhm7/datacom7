@@ -29,6 +29,7 @@ def acceptC():
 
 #여기에 데이터를 받았을때 해야 할 일을 넣어야함
 def consoles():
+    global fighter2X
     while True:
         msg=client.recv(1024).decode()
         print(msg)
@@ -37,6 +38,9 @@ def consoles():
             server.close()
             pygame.quit()
             sys.exit()
+        elif msg.startswith("fighter2"):
+            _, f2X = msg.split()
+            fighter2X = int(f2X)
 
 # 게임에 등장하는 객체를 드로잉
 def drawObject(obj, x, y):
@@ -44,21 +48,23 @@ def drawObject(obj, x, y):
     gamePad.blit(obj, (x, y))
 
 def initGame():
-    global gamePad, clock, background, fighter, missile, explosion
+    global gamePad, clock, background, fighter1, fighter2, missile, explosion
     pygame.init()
     gamePad = pygame.display.set_mode((padWidth, padHeight))
     pygame.display.set_caption("server")  # 게임 이름
     background = pygame.image.load('asset/background.png') # 배경 그림
-    fighter = pygame.image.load('asset/fighter.png')    # 전투기 그림
-    fighter = pygame.transform.scale(fighter, (50, 50)) # 전투기 크기를 50x50으로 조정
+    fighter1 = pygame.image.load('asset/fighter.png')    # 전투기 그림
+    fighter1 = pygame.transform.scale(fighter1, (50, 50)) # 전투기 크기를 50x50으로 조정
+    fighter2 = pygame.image.load('asset/fighter.png')    # 전투기 그림
+    fighter2 = pygame.transform.scale(fighter2, (50, 50)) # 전투기 크기를 50x50으로 조정
     missile = pygame.image.load('asset/missile.png')    # 미사일 그림
     missile = pygame.transform.scale(missile, (20, 30)) # 미사일 크기를 20x30으로 조정
     explosion = pygame.transform.scale(pygame.image.load('asset/explosion.png'),(55,55))    # 폭발 그림
-
     clock = pygame.time.Clock()
 
 def runGame():
-    global gamePad, clock, background, fighter, missile, explosion
+    global gamePad, clock, background, fighter1, fighter2, missile, explosion
+    global fighter2X #클라이언트에서 제어하는 전투기2의 x좌표
 
     # 무기 좌표 리스트
     missileXY = []
@@ -68,14 +74,18 @@ def runGame():
     rockSpeed = 2
 
     # 전투기 크기
-    fighterSize = fighter.get_rect().size
+    fighterSize = fighter1.get_rect().size
     fighterWidth = fighterSize[0]
     fighterHeight = fighterSize[1]
 
-    # 전투기 초기 위치 (x, y)
-    x = padWidth * 0.45
-    y = padHeight * 0.9
-    fighterX = 0
+    # 전투기1 초기 위치 (x, y)
+    x1 = padWidth * 0.3
+    y1 = padHeight * 0.9
+    fighter1X = 0
+
+    # 전투기 2 초기 위치 및 변수
+    fighter2X = padWidth * 0.6
+    y2 = padHeight * 0.9
 
     # 전투기,미사일,운석 판정
     isShot = False  # 운석에 미사일 적중
@@ -93,39 +103,44 @@ def runGame():
             
             if event.type in [pygame.KEYDOWN]:
                 if event.key == pygame.K_LEFT:  # 전투기 왼쪽으로 이동
-                    fighterX -= 5
-                
+                    fighter1X -= 5
                 elif event.key == pygame.K_RIGHT:   # 전투기 오른쪽으로 이동
-                    fighterX += 5
-                
+                    fighter1X += 5
                 elif event.key == pygame.K_SPACE:   # 미사일 발사
-                    missileX = x + (fighterWidth / 2) - (missile.get_rect().width / 2)
-                    missileY = y - fighterHeight
+                    missileX = x1 + (fighterWidth / 2) - (missile.get_rect().width / 2)
+                    missileY = y1 - fighterHeight
                     missileXY.append([missileX, missileY])
                     msg="서버 미사일 발사"
                     client.sendall(msg.encode()) #클라이언트에게 내가내린명령전송
             
             if event.type in [pygame.KEYUP]:    #방향키를 떼면 전투기 멈춤
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                    fighterX = 0
+                    fighter1X = 0
 
         drawObject(background, 0, 0) # 배경 화면 그리기
 
         # 전투기 위치 재조정
-        x += fighterX
-        if x<0:
-            x=0
-        elif x > padWidth - fighterWidth:
-            x = padWidth - fighterWidth
+        x1 += fighter1X
+        if x1<0:
+            x1=0
+        elif x1 > padWidth - fighterWidth:
+            x1 = padWidth - fighterWidth
         
+        # 전투기2 위치 이동 제어
+        if fighter2X < 0 :
+            fighter2X = 0
+        elif fighter2X > padWidth - fighterWidth:
+            fighter2X = padWidth - fighterWidth
+
         # 전투기가 운석과 충돌했는지 체크
-        if y < rockY + rockHeight :
-            if(rockX > x and rockX < x + fighterWidth) or \
-                (rockX + rockWidth > x and rockX + rockWidth < x + fighterWidth):
+        if y1 < rockY + rockHeight :
+            if(rockX > x1 and rockX < x1 + fighterWidth) or \
+                (rockX + rockWidth > x1 and rockX + rockWidth < x1 + fighterWidth):
                 client.sendall("crash".encode())
                 crash()
 
-        drawObject(fighter, x, y)   # 비행기를 게임 화면의 (x, y) 좌표에 그림
+        drawObject(fighter1, x1, y1)   # 비행기를 게임 화면의 (x, y) 좌표에 그림
+        drawObject(fighter2, fighter2X, y2)
 
         # 미사일 발사 화면에 그리기
         if len(missileXY) != 0:
