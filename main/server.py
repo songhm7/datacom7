@@ -65,7 +65,7 @@ def runGame():
     missileXY = []
 
     # 운석 랜덤 생성, 초기 위치 설정
-    rock, rockWidth, rockHeight, rockX, rockY = createRandomRock()
+    rock, rockWidth, rockHeight, rockX, rockY, rock_index = createRandomRock()
     rockSpeed = 2
 
     # 전투기 크기
@@ -123,6 +123,7 @@ def runGame():
         if y < rockY + rockHeight :
             if(rockX > x and rockX < x + fighterWidth) or \
                 (rockX + rockWidth > x and rockX + rockWidth < x + fighterWidth):
+                client.sendall("crash".encode())
                 crash()
 
         drawObject(fighter, x, y)   # 비행기를 게임 화면의 (x, y) 좌표에 그림
@@ -150,14 +151,18 @@ def runGame():
                 drawObject(missile, bx, by)
 
         rockY += rockSpeed  # 운석 아래로 움직임
+        rock_info = f"ROCK {rock_index} {rockX} {int(rockY)}"
+        client.sendall(rock_info.encode())
 
         # 운석이 지구로 떨어진 경우
         if rockY > padHeight:
             # 새로운 운석 (랜덤)
-            rock, rockWidth, rockHeight, rockX, rockY = createRandomRock()
+            rock, rockWidth, rockHeight, rockX, rockY, rock_index = createRandomRock()
             rockPassed += 1
+            client.sendall(f"passed {rockPassed}".encode())
             if rockPassed == 3:
                 gameOver()
+                
         
         # 운석을 맞춘 경우 
         if isShot:
@@ -165,7 +170,7 @@ def runGame():
             drawObject(explosion, rockX, rockY) #운석 폭발 그리기
 
             # 새로운 운석 (랜덤)
-            rock, rockWidth, rockHeight, rockX, rockY = createRandomRock()
+            rock, rockWidth, rockHeight, rockX, rockY, rock_index = createRandomRock()
             isShot = False
 
             # 운석 맞추면 속도 증가
@@ -194,9 +199,8 @@ def createRandomRock():
     rockX = random.randrange(0, padWidth - rockWidth)
     rockY = 0
     rock_info = f"ROCK {rock_index} {rockX} {rockY}"
-    client.sendall(rock_info.encode())
-    
-    return rock, rockWidth, rockHeight, rockX, rockY
+    #client.sendall(rock_info.encode())
+    return rock, rockWidth, rockHeight, rockX, rockY, rock_index
 
 # 운석 맞춘 개수 표시
 def writeScore(count):

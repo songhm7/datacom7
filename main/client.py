@@ -26,6 +26,8 @@ def acceptC():
 #여기에 데이터를 받았을때 해야 할 일을 넣어야함
 def consoles():
     global rock_initialized
+    global rockPassed
+    global iscrashed
     while True:
         msg=client.recv(1024).decode()
         if not msg:
@@ -37,8 +39,11 @@ def consoles():
             rocky = int(rocky)
             createRockFromServer(rock_index, rockx, rocky)
             rock_initialized = True  # 첫 번째 운석이 도착하면 초기화
-        elif msg.startswith("MISSILE"):
-            pass
+        elif msg.startswith("passed"):
+            _, passed_count = msg.split()
+            rockPassed = int(passed_count)
+        elif msg == "crash":
+            iscrashed = True
         print(msg)
 
 # 게임에 등장하는 객체를 드로잉
@@ -63,7 +68,7 @@ def initGame():
 def runGame():
     global gamePad, clock, background, fighter, missile, explosion
     global rock, rockX, rockY, rockWidth, rockHeight, rock_initialized
-
+    global rockPassed, iscrashed
     # 무기 좌표 리스트
     missileXY = []
 
@@ -83,6 +88,7 @@ def runGame():
     isShot = False  # 운석에 미사일 적중
     shotCount = 0   # 적중횟수
     rockPassed = 0  # 격추 실패 횟수
+    iscrashed = False
 
     onGame = False
     while not onGame:
@@ -120,14 +126,13 @@ def runGame():
             x = padWidth - fighterWidth
 
         drawObject(fighter, x, y)   # 비행기를 게임 화면의 (x, y) 좌표에 그림
-
+ 
         # 운석 정보가 초기화된 이후에만 충돌 판정 수행
         if rock_initialized:
+            
             # 전투기가 운석과 충돌했는지 체크
-            if y < rockY + rockHeight :
-                if(rockX > x and rockX < x + fighterWidth) or \
-                    (rockX + rockWidth > x and rockX + rockWidth < x + fighterWidth):
-                    crash()
+            if iscrashed :
+                crash()
         
             # 미사일 발사 화면에 그리기
             if len(missileXY) != 0:
@@ -151,15 +156,11 @@ def runGame():
                 for bx, by in missileXY:
                     drawObject(missile, bx, by)
 
-            rockY += rockSpeed  # 운석 아래로 움직임
-
+            #rockY += rockSpeed  # 운석 아래로 움직임
+            
             # 운석이 지구로 떨어진 경우
-            if rockY > padHeight:
-                # 새로운 운석 (랜덤)
-                # rock, rockWidth, rockHeight, rockX, rockY = createRandomRock()
-                rockPassed += 1
-                if rockPassed == 3:
-                    gameOver()
+            if rockPassed == 3:
+                gameOver()
             
             # 운석을 맞춘 경우 
             if isShot:
