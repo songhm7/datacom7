@@ -174,7 +174,7 @@ def runGame():
             isShot = False
 
             # 운석 맞추면 속도 증가
-            rockSpeed += 0.02
+            rockSpeed += 0.1
             if rockSpeed >= 10:
                 rockSpeed = 10
         
