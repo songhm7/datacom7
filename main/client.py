@@ -25,11 +25,21 @@ def acceptC():
 
 #여기에 데이터를 받았을때 해야 할 일을 넣어야함
 def consoles():
+    global rock_initialized
     while True:
-        msg=client.recv(1024)
+        msg=client.recv(1024).decode()
         if not msg:
             break # 서버가 연결을 끊으면 루프 종료
-        print(msg.decode())
+        if msg.startswith("ROCK"):
+            _, rock_index, rockx, rocky = msg.split()
+            rock_index = int(rock_index)
+            rockx = int(rockx)
+            rocky = int(rocky)
+            createRockFromServer(rock_index, rockx, rocky)
+            rock_initialized = True  # 첫 번째 운석이 도착하면 초기화
+        elif msg.startswith("MISSILE"):
+            pass
+        print(msg)
 
 # 게임에 등장하는 객체를 드로잉
 def drawObject(obj, x, y):
@@ -52,20 +62,19 @@ def initGame():
 
 def runGame():
     global gamePad, clock, background, fighter, missile, explosion
+    global rock, rockX, rockY, rockWidth, rockHeight, rock_initialized
 
     # 무기 좌표 리스트
     missileXY = []
 
-    # 운석 랜덤 생성, 초기 위치 설정
-    rock, rockWidth, rockHeight, rockX, rockY = createRandomRock()
+    # 운석 위치 및 크기 초기화 플래기
+    rock_initialized = False
     rockSpeed = 2
 
-    # 전투기 크기
+    # 전투기 크기 및 초기 위치 설정
     fighterSize = fighter.get_rect().size
     fighterWidth = fighterSize[0]
     fighterHeight = fighterSize[1]
-
-    # 전투기 초기 위치 (x, y)
     x = padWidth * 0.45
     y = padHeight * 0.9
     fighterX = 0
@@ -109,81 +118,81 @@ def runGame():
             x=0
         elif x > padWidth - fighterWidth:
             x = padWidth - fighterWidth
-        
-        # 전투기가 운석과 충돌했는지 체크
-        if y < rockY + rockHeight :
-            if(rockX > x and rockX < x + fighterWidth) or \
-                (rockX + rockWidth > x and rockX + rockWidth < x + fighterWidth):
-                crash()
 
         drawObject(fighter, x, y)   # 비행기를 게임 화면의 (x, y) 좌표에 그림
 
-        # 미사일 발사 화면에 그리기
-        if len(missileXY) != 0:
-            for i, bxy in enumerate(missileXY): # 미사일 요소에 대해 반복함
-                bxy[1] -= 10    # 총알의 y좌표 -10 (위로 이동)
-                missileXY[i][1] = bxy[1]
-
-                # 미사일이 운석을 맞추었을 경우
-                if bxy[1] < rockY:
-                    if bxy[0] > rockX and bxy[0] < rockX + rockWidth:
-                        missileXY.remove(bxy)
-                        isShot = True
-                        shotCount += 1
-
-                if bxy[1] <= 0: # 미사일이 화면 밖을 벗어나면
-                    try:
-                        missileXY.remove(bxy)   # 미사일 제거
-                    except:
-                        pass
-        if len(missileXY) != 0:
-            for bx, by in missileXY:
-                drawObject(missile, bx, by)
-
-        rockY += rockSpeed  # 운석 아래로 움직임
-
-        # 운석이 지구로 떨어진 경우
-        if rockY > padHeight:
-            # 새로운 운석 (랜덤)
-            rock, rockWidth, rockHeight, rockX, rockY = createRandomRock()
-            rockPassed += 1
-            if rockPassed == 3:
-                gameOver()
+        # 운석 정보가 초기화된 이후에만 충돌 판정 수행
+        if rock_initialized:
+            # 전투기가 운석과 충돌했는지 체크
+            if y < rockY + rockHeight :
+                if(rockX > x and rockX < x + fighterWidth) or \
+                    (rockX + rockWidth > x and rockX + rockWidth < x + fighterWidth):
+                    crash()
         
-        # 운석을 맞춘 경우 
-        if isShot:
-            # 운석 폭발
-            drawObject(explosion, rockX, rockY) #운석 폭발 그리기
+            # 미사일 발사 화면에 그리기
+            if len(missileXY) != 0:
+                for i, bxy in enumerate(missileXY): # 미사일 요소에 대해 반복함
+                    bxy[1] -= 10    # 총알의 y좌표 -10 (위로 이동)
+                    missileXY[i][1] = bxy[1]
 
-            # 새로운 운석 (랜덤)
-            rock, rockWidth, rockHeight, rockX, rockY = createRandomRock()
-            isShot = False
+                    # 미사일이 운석을 맞추었을 경우
+                    if bxy[1] < rockY:
+                        if bxy[0] > rockX and bxy[0] < rockX + rockWidth:
+                            missileXY.remove(bxy)
+                            isShot = True
+                            shotCount += 1
 
-            # 운석 맞추면 속도 증가
-            rockSpeed += 0.02
-            if rockSpeed >= 10:
-                rockSpeed = 10
-        
+                    if bxy[1] <= 0: # 미사일이 화면 밖을 벗어나면
+                        try:
+                            missileXY.remove(bxy)   # 미사일 제거
+                        except:
+                            pass
+            if len(missileXY) != 0:
+                for bx, by in missileXY:
+                    drawObject(missile, bx, by)
+
+            rockY += rockSpeed  # 운석 아래로 움직임
+
+            # 운석이 지구로 떨어진 경우
+            if rockY > padHeight:
+                # 새로운 운석 (랜덤)
+                # rock, rockWidth, rockHeight, rockX, rockY = createRandomRock()
+                rockPassed += 1
+                if rockPassed == 3:
+                    gameOver()
+            
+            # 운석을 맞춘 경우 
+            if isShot:
+                # 운석 폭발
+                drawObject(explosion, rockX, rockY) #운석 폭발 그리기
+
+                # 새로운 운석 (랜덤)
+                # rock, rockWidth, rockHeight, rockX, rockY = createRandomRock()
+                isShot = False
+
+                # 운석 맞추면 속도 증가
+                rockSpeed += 0.02
+                if rockSpeed >= 10:
+                    rockSpeed = 10
+
+            #운석 그리기
+            drawObject(rock, rockX, rockY)   
         writeScore(shotCount)
         writePassed(rockPassed)
-
-        drawObject(rock, rockX, rockY)  # 운석 그리기
-
         pygame.display.update() # 게임 화면을 다시그림
-        
         clock.tick(60)  # 게임화면의 초당 프레임수를 60으로 설정
     
     pygame.quit()   #pygame 종료
 
-# 랜덤 운석 생성 함수
-def createRandomRock():
-    rock = pygame.transform.scale(pygame.image.load(random.choice(rockImage)), (50, 50))
+# 서버로부터 받은 운석정보를 바탕으로 운석 생성
+def createRockFromServer(rock_index, rockx, rocky):
+    global rock, rockWidth, rockHeight, rockX, rockY
+    rock = pygame.transform.scale(pygame.image.load(rockImage[rock_index]), (50, 50))
     rockSize = rock.get_rect().size
     rockWidth = rockSize[0]
     rockHeight = rockSize[1]
-    rockX = random.randrange(0, padWidth - rockWidth)
-    rockY = 0
-    return rock, rockWidth, rockHeight, rockX, rockY
+    rockX = rockx
+    rockY = rocky
 
 # 운석 맞춘 개수 표시
 def writeScore(count):

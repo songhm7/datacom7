@@ -185,14 +185,17 @@ def runGame():
     pygame.quit()   #pygame 종료
 
 # 랜덤 운석 생성 함수
-# 추후 랜덤위치가 아닌 서버플레이어가 결정하도록 수정할 것
 def createRandomRock():
-    rock = pygame.transform.scale(pygame.image.load(random.choice(rockImage)), (50, 50))
+    rock_index = random.randint(0, len(rockImage) - 1)
+    rock = pygame.transform.scale(pygame.image.load(rockImage[rock_index]), (50, 50))
     rockSize = rock.get_rect().size
     rockWidth = rockSize[0]
     rockHeight = rockSize[1]
     rockX = random.randrange(0, padWidth - rockWidth)
     rockY = 0
+    rock_info = f"ROCK {rock_index} {rockX} {rockY}"
+    client.sendall(rock_info.encode())
+    
     return rock, rockWidth, rockHeight, rockX, rockY
 
 # 운석 맞춘 개수 표시
