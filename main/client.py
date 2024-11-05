@@ -1,7 +1,6 @@
 # client.py
 import pygame
 import sys
-import random
 import socket
 import threading
 from time import sleep
@@ -25,9 +24,7 @@ def acceptC():
 
 #여기에 데이터를 받았을때 해야 할 일을 넣어야함
 def consoles():
-    global rock_initialized
-    global rockPassed
-    global iscrashed
+    global rock_initialized, rockPassed, iscrashed, shotCount
     while True:
         msg=client.recv(1024).decode()
         if not msg:
@@ -44,6 +41,10 @@ def consoles():
             rockPassed = int(passed_count)
         elif msg == "crash":
             iscrashed = True
+        elif msg.startswith("explosion"):
+            _, exX, exY, shotCount = msg.split()
+            drawObject(explosion, int(exX), int(exY)) #운석 폭발 그리기
+            pygame.display.update()
         print(msg)
 
 # 게임에 등장하는 객체를 드로잉
@@ -68,7 +69,7 @@ def initGame():
 def runGame():
     global gamePad, clock, background, fighter, missile, explosion
     global rock, rockX, rockY, rockWidth, rockHeight, rock_initialized
-    global rockPassed, iscrashed
+    global rockPassed, iscrashed, shotCount
     # 무기 좌표 리스트
     missileXY = []
 

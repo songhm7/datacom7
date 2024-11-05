@@ -22,17 +22,16 @@ def acceptC():
     server.listen()
     client,addr=server.accept()
 
+    #클라이언트로부터 받는 데이터를 관리하기위한 멀티쓰레딩(밑에는 데몬스레드라고 선언 -> c++로 따지면 detach와같습니다)
     thr=threading.Thread(target=consoles,args=())
-    #클라이언트로부터 받는 데이터를 관리하기위한
-    #멀티쓰레딩(밑에는 데몬스레드라고 선언 -> c++로 따지면 detach와같습니다)
     thr.Daemon=True
     thr.start()
 
 #여기에 데이터를 받았을때 해야 할 일을 넣어야함
 def consoles():
     while True:
-        msg=client.recv(1024)
-        print(msg.decode())
+        msg=client.recv(1024).decode()
+        print(msg)
         if msg=="quit":
             client.close()
             server.close()
@@ -168,7 +167,7 @@ def runGame():
         if isShot:
             # 운석 폭발
             drawObject(explosion, rockX, rockY) #운석 폭발 그리기
-
+            client.sendall(f"explosion {int(rockX)} {int(rockY)} {shotCount}".encode())
             # 새로운 운석 (랜덤)
             rock, rockWidth, rockHeight, rockX, rockY, rock_index = createRandomRock()
             isShot = False
