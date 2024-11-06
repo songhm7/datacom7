@@ -29,7 +29,7 @@ def acceptC():
 
 #여기에 데이터를 받았을때 해야 할 일을 넣어야함
 def consoles():
-    global fighter2X
+    global fighter2X, fighterWidth, fighterHeight, missileXY, y2
     buffer = ""
     while True:
         buffer += client.recv(1024).decode()
@@ -45,6 +45,10 @@ def consoles():
             elif msg.startswith("fighter2"):
                 _, f2X = msg.split()
                 fighter2X = int(f2X)
+            elif msg=="missile_request":
+                missileX = fighter2X + (fighterWidth / 2) - (missile.get_rect().width / 2)
+                missileY = y2 - fighterHeight
+                missileXY.append([missileX, missileY])  # 서버에서 미사일 추가
         pygame.display.update()
 
 # 게임에 등장하는 객체를 드로잉
@@ -54,6 +58,7 @@ def drawObject(obj, x, y):
 
 def initGame():
     global gamePad, clock, background, fighter1, fighter2, missile, explosion
+    global fighterWidth
     pygame.init()
     gamePad = pygame.display.set_mode((padWidth, padHeight))
     pygame.display.set_caption("server")  # 게임 이름
@@ -70,6 +75,7 @@ def initGame():
 def runGame():
     global gamePad, clock, background, fighter1, fighter2, missile, explosion
     global fighter2X #클라이언트에서 제어하는 전투기2의 x좌표
+    global fighterWidth, fighterHeight, missileXY, y2
 
     # 무기 좌표 리스트
     missileXY = []
@@ -144,10 +150,16 @@ def runGame():
         elif fighter2X > padWidth - fighterWidth:
             fighter2X = padWidth - fighterWidth
 
-        # 전투기가 운석과 충돌했는지 체크
+        # 전투기1 운석과 충돌했는지 체크
         if y1 < rockY + rockHeight :
             if(rockX > x1 and rockX < x1 + fighterWidth) or \
                 (rockX + rockWidth > x1 and rockX + rockWidth < x1 + fighterWidth):
+                client.sendall("crash\n".encode())
+                crash()
+        # 전투기2 충돌 체크
+        if y2 < rockY + rockHeight:
+            if (rockX > fighter2X and rockX < fighter2X + fighterWidth) or \
+            (rockX + rockWidth > fighter2X and rockX + rockWidth < fighter2X + fighterWidth):
                 client.sendall("crash\n".encode())
                 crash()
 
@@ -180,11 +192,15 @@ def runGame():
         if len(missileXY) != 0:
             for bx, by in missileXY:
                 drawObject(missile, bx, by)
-
-        rockY += rockSpeed  # 운석 아래로 움직임
+        
+        # 운석 아래로 움직임
+        rockY += rockSpeed 
         rock_info = f"ROCK {rock_index} {rockX} {int(rockY)}\n"
-        client.sendall(rock_info.encode())
+        client.sendall(rock_info.encode()) # 운석 위치 전송
 
+        # 미사일 위치 전송
+        missiles_data = "MISSILES " + " ".join([f"{int(x)},{int(y)}" for x, y in missileXY]) + "\n"
+        client.sendall(missiles_data.encode())
         
         # 운석이 지구로 떨어진 경우
         if rockY > padHeight:

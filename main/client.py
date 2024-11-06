@@ -24,7 +24,7 @@ def acceptC():
 
 #여기에 데이터를 받았을때 해야 할 일을 넣어야함
 def consoles():
-    global rock_initialized, rockPassed, iscrashed, shotCount, fighter1X
+    global rock_initialized, rockPassed, iscrashed, shotCount, fighter1X, client_missiles
     buffer = ""
     while True:
         buffer += client.recv(1024).decode()
@@ -53,6 +53,11 @@ def consoles():
                 _, f1X = msg.split()
                 fighter1X = int(f1X)
                 print(msg)
+            elif msg.startswith("MISSILES"):
+                missile_positions = msg.split()[1:]
+                # 클라이언트가 그릴 미사일 좌표 리스트 업데이트
+                client_missiles = [(int(x), int(y)) for pos in missile_positions for x, y in [pos.split(",")]]
+
         pygame.display.update()
 
 # 게임에 등장하는 객체를 드로잉
@@ -79,7 +84,7 @@ def initGame():
 def runGame():
     global gamePad, clock, background, fighter1, fighter2, missile, explosion
     global rock, rockX, rockY, rockWidth, rockHeight, rock_initialized
-    global rockPassed, iscrashed, shotCount
+    global rockPassed, iscrashed, shotCount, client_missiles
     global fighter1X # 서버에서 조종하는 전투기1 위치
     
     # 무기 좌표 리스트
@@ -103,7 +108,6 @@ def runGame():
     y1 = padHeight * 0.9
 
     # 전투기,미사일,운석 판정
-    isShot = False  # 운석에 미사일 적중
     shotCount = 0   # 적중횟수
     rockPassed = 0  # 격추 실패 횟수
     iscrashed = False
@@ -128,12 +132,8 @@ def runGame():
                     moving_right = True
                     fighter2X += 5
                 
-                elif event.key == pygame.K_SPACE:   # 미사일 발사
-                    missileX = x2 + (fighterWidth / 2) - (missile.get_rect().width / 2)
-                    missileY = y2 - fighterHeight
-                    missileXY.append([missileX, missileY])
-                    msg="클라이언트 미사일 발사\n"
-                    client.sendall(msg.encode()) #서버에게 내가내린명령전송
+                elif event.key == pygame.K_SPACE:   # 미사일 발사 요청
+                    client.sendall("missile_request\n".encode())
             
             if event.type in [pygame.KEYUP]:    #방향키를 떼면 전투기 멈춤
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
@@ -168,48 +168,12 @@ def runGame():
             # 전투기가 운석과 충돌했는지 체크
             if iscrashed :
                 crash()
-            '''
-            # 미사일 발사 화면에 그리기
-            if len(missileXY) != 0:
-                for i, bxy in enumerate(missileXY): # 미사일 요소에 대해 반복함
-                    bxy[1] -= 10    # 총알의 y좌표 -10 (위로 이동)
-                    missileXY[i][1] = bxy[1]
-
-                    # 미사일이 운석을 맞추었을 경우
-                    if bxy[1] < rockY:
-                        if bxy[0] > rockX and bxy[0] < rockX + rockWidth:
-                            missileXY.remove(bxy)
-                            isShot = True
-                            shotCount += 1
-
-                    if bxy[1] <= 0: # 미사일이 화면 밖을 벗어나면
-                        try:
-                            missileXY.remove(bxy)   # 미사일 제거
-                        except:
-                            pass
-            if len(missileXY) != 0:
-                for bx, by in missileXY:
-                    drawObject(missile, bx, by)
-            '''
-            #rockY += rockSpeed  # 운석 아래로 움직임
-            
+            for mx, my in client_missiles:
+                drawObject(missile, mx, my)
+                          
             # 운석이 지구로 떨어진 경우
             if rockPassed == 3:
                 gameOver()
-            
-            # 운석을 맞춘 경우 
-            if isShot:
-                # 운석 폭발
-                #drawObject(explosion, rockX, rockY) #운석 폭발 그리기
-
-                # 새로운 운석 (랜덤)
-                # rock, rockWidth, rockHeight, rockX, rockY = createRandomRock()
-                isShot = False
-
-                # 운석 맞추면 속도 증가
-                #rockSpeed += 0.02
-                #if rockSpeed >= 10:
-                    #rockSpeed = 10
 
             #운석 그리기
             drawObject(rock, rockX, rockY)   
