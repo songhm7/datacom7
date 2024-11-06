@@ -63,7 +63,8 @@ def consoles():
                 missileX = fighter2X + (fighterWidth / 2) - (missile.get_rect().width / 2)
                 missileY = y2 - fighterHeight
                 missileXY.append([missileX, missileY])  # 서버에서 미사일 추가
-        pygame.display.update()
+        if pygame.display.get_init():
+            pygame.display.update()
 
 # 게임에 등장하는 객체를 드로잉
 def drawObject(obj, x, y):
