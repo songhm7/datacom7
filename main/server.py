@@ -35,7 +35,7 @@ def consoles():
     global fighter2X, fighterWidth, fighterHeight, missileXY, y2
     buffer = ""
     while True:
-        buffer += client.recv(1024).decode()
+        buffer += client.recv(1024).decode('utf-8')
         messages = buffer.split("\n") # 줄바꿈을 기준으로 메시지 구분
         buffer = messages.pop()     # 마지막 남은 덜 완성된 메시지는 버퍼에 남김
         for msg in messages:
@@ -130,7 +130,7 @@ def runGame():
                     missileY = y1 - fighterHeight
                     missileXY.append([missileX, missileY])
                     msg="서버 미사일 발사\n"
-                    client.sendall(msg.encode()) #클라이언트에게 내가내린명령전송
+                    client.sendall(msg.encode('utf-8')) #클라이언트에게 내가내린명령전송
             
             if event.type in [pygame.KEYUP]:    #방향키를 떼면 전투기 멈춤
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
@@ -157,13 +157,13 @@ def runGame():
         if y1 < rockY + rockHeight :
             if(rockX > x1 and rockX < x1 + fighterWidth) or \
                 (rockX + rockWidth > x1 and rockX + rockWidth < x1 + fighterWidth):
-                client.sendall("crash\n".encode())
+                client.sendall("crash\n".encode('utf-8'))
                 crash()
         # 전투기2 충돌 체크
         if y2 < rockY + rockHeight:
             if (rockX > fighter2X and rockX < fighter2X + fighterWidth) or \
             (rockX + rockWidth > fighter2X and rockX + rockWidth < fighter2X + fighterWidth):
-                client.sendall("crash\n".encode())
+                client.sendall("crash\n".encode('utf-8'))
                 crash()
 
         # 비행기를 게임 화면의 (x, y) 좌표에 그림
@@ -172,7 +172,7 @@ def runGame():
 
         # 서버에 전투기1 위치를 전송
         if moving_left or moving_right:
-            client.sendall(f"fighter1 {str(int(x1))}\n".encode())
+            client.sendall(f"fighter1 {str(int(x1))}\n".encode('utf-8'))
 
         # 미사일 발사 화면에 그리기
         if len(missileXY) != 0:
@@ -199,18 +199,18 @@ def runGame():
         # 운석 아래로 움직임
         rockY += rockSpeed 
         rock_info = f"ROCK {rock_index} {rockX} {int(rockY)}\n"
-        client.sendall(rock_info.encode()) # 운석 위치 전송
+        client.sendall(rock_info.encode('utf-8')) # 운석 위치 전송
 
         # 미사일 위치 전송
         missiles_data = "MISSILES " + " ".join([f"{int(x)},{int(y)}" for x, y in missileXY]) + "\n"
-        client.sendall(missiles_data.encode())
+        client.sendall(missiles_data.encode('utf-8'))
         
         # 운석이 지구로 떨어진 경우
         if rockY > padHeight:
             # 새로운 운석 (랜덤)
             rock, rockWidth, rockHeight, rockX, rockY, rock_index = createRandomRock()
             rockPassed += 1
-            client.sendall(f"passed {rockPassed}\n".encode())
+            client.sendall(f"passed {rockPassed}\n".encode('utf-8'))
             if rockPassed == 3:
                 gameOver()
                 
@@ -219,7 +219,7 @@ def runGame():
         if isShot:
             # 운석 폭발
             drawObject(explosion, rockX, rockY) #운석 폭발 그리기
-            client.sendall(f"explosion {int(rockX)} {int(rockY)} {shotCount}\n".encode())
+            client.sendall(f"explosion {int(rockX)} {int(rockY)} {shotCount}\n".encode('utf-8'))
             # 새로운 운석 (랜덤)
             rock, rockWidth, rockHeight, rockX, rockY, rock_index = createRandomRock()
             isShot = False

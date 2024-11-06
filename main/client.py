@@ -30,7 +30,7 @@ def consoles():
     global rock_initialized, rockPassed, iscrashed, shotCount, fighter1X, client_missiles
     buffer = ""
     while True:
-        buffer += client.recv(1024).decode()
+        buffer += client.recv(1024).decode('utf-8')
         messages = buffer.split("\n") # 줄바꿈을 기준으로 메시지 구분
         buffer = messages.pop() # 마지막 남은 덜 완성된 메시지는 버퍼에 남김
         for msg in messages:
@@ -135,7 +135,7 @@ def runGame():
                     fighter2X += 5
                 
                 elif event.key == pygame.K_SPACE:   # 미사일 발사 요청
-                    client.sendall("missile_request\n".encode())
+                    client.sendall("missile_request\n".encode('utf-8'))
             
             if event.type in [pygame.KEYUP]:    #방향키를 떼면 전투기 멈춤
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
@@ -163,7 +163,7 @@ def runGame():
         
         # 서버에 전투기2 위치를 전송
         if moving_left or moving_right:
-            client.sendall(f"fighter2 {str(int(x2))}\n".encode())
+            client.sendall(f"fighter2 {str(int(x2))}\n".encode('utf-8'))
  
         # 운석 정보가 초기화된 이후에만 충돌 판정 수행
         if rock_initialized:
