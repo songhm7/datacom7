@@ -36,7 +36,6 @@ def consoles():
         messages = buffer.split("\n") # 줄바꿈을 기준으로 메시지 구분
         buffer = messages.pop()     # 마지막 남은 덜 완성된 메시지는 버퍼에 남김
         for msg in messages:
-            print(msg)
             if msg=="quit":
                 client.close()
                 server.close()

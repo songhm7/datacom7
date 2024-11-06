@@ -13,8 +13,8 @@ rockImage = ['asset/rock1.png','asset/rock2.png','asset/rock3.png','asset/rock4.
 
 def acceptC():
     global client
-    #host_ip = input("서버 주소 입력 : ")
-    host_ip = socket.gethostbyname(socket.gethostname()) #개발중 빠른 재기동을 위한 라인
+    host_ip = input("서버 주소 입력 : ")
+    #host_ip = socket.gethostbyname(socket.gethostname()) #개발중 빠른 재기동을 위한 라인
     client=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     client.connect((host_ip,8080))
 
@@ -52,7 +52,6 @@ def consoles():
             elif msg.startswith("fighter1"):
                 _, f1X = msg.split()
                 fighter1X = int(f1X)
-                print(msg)
             elif msg.startswith("MISSILES"):
                 missile_positions = msg.split()[1:]
                 # 클라이언트가 그릴 미사일 좌표 리스트 업데이트
@@ -87,8 +86,8 @@ def runGame():
     global rockPassed, iscrashed, shotCount, client_missiles
     global fighter1X # 서버에서 조종하는 전투기1 위치
     
-    # 무기 좌표 리스트
-    missileXY = []
+    # 미사일 좌표 초기화
+    client_missiles = []
 
     # 운석 위치 및 크기 초기화 플래기
     rock_initialized = False
