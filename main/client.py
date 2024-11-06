@@ -24,15 +24,14 @@ def acceptC():
 
 #여기에 데이터를 받았을때 해야 할 일을 넣어야함
 def consoles():
-    global rock_initialized, rockPassed, iscrashed, shotCount
+    global rock_initialized, rockPassed, iscrashed, shotCount, fighter1X
     buffer = ""
-
     while True:
         buffer += client.recv(1024).decode()
         messages = buffer.split("\n") # 줄바꿈을 기준으로 메시지 구분
         buffer = messages.pop() # 마지막 남은 덜 완성된 메시지는 버퍼에 남김
         for msg in messages:
-            print(msg)
+            #print(msg)
             if not msg:
                 continue # 빈 메시지 건너뛰기
             if msg.startswith("ROCK"):
@@ -51,7 +50,9 @@ def consoles():
                 _, exX, exY, shotCount = msg.split()
                 drawObject(explosion, int(exX), int(exY)) #운석 폭발 그리기
             elif msg.startswith("fighter1"):
-                pass
+                _, f1X = msg.split()
+                fighter1X = int(f1X)
+                print(msg)
         pygame.display.update()
 
 # 게임에 등장하는 객체를 드로잉
@@ -60,11 +61,13 @@ def drawObject(obj, x, y):
     gamePad.blit(obj, (x, y))
 
 def initGame():
-    global gamePad, clock, background, fighter2, missile, explosion
+    global gamePad, clock, background, fighter1, fighter2, missile, explosion
     pygame.init()
     gamePad = pygame.display.set_mode((padWidth, padHeight))
     pygame.display.set_caption("client")  # 게임 이름
     background = pygame.image.load('asset/background.png') # 배경 그림
+    fighter1 = pygame.image.load('asset/fighter.png')    # 전투기 그림
+    fighter1 = pygame.transform.scale(fighter1, (50, 50)) # 전투기 크기를 50x50으로 조정
     fighter2 = pygame.image.load('asset/fighter.png')    # 전투기 그림
     fighter2 = pygame.transform.scale(fighter2, (50, 50)) # 전투기 크기를 50x50으로 조정
     missile = pygame.image.load('asset/missile.png')    # 미사일 그림
@@ -74,22 +77,30 @@ def initGame():
     clock = pygame.time.Clock()
 
 def runGame():
-    global gamePad, clock, background, fighter2, missile, explosion
+    global gamePad, clock, background, fighter1, fighter2, missile, explosion
     global rock, rockX, rockY, rockWidth, rockHeight, rock_initialized
     global rockPassed, iscrashed, shotCount
+    global fighter1X # 서버에서 조종하는 전투기1 위치
+    
     # 무기 좌표 리스트
     missileXY = []
 
     # 운석 위치 및 크기 초기화 플래기
     rock_initialized = False
 
-    # 전투기 크기 및 초기 위치 설정
+    # 전투기크기
     fighterSize = fighter2.get_rect().size
     fighterWidth = fighterSize[0]
     fighterHeight = fighterSize[1]
+
+    # 전투기2 초기위치
     x2 = padWidth * 0.6
     y2 = padHeight * 0.9
     fighter2X = 0
+
+    # 전투기1 초기위치 및 변수
+    fighter1X = padWidth * 0.3
+    y1 = padHeight * 0.9
 
     # 전투기,미사일,운석 판정
     isShot = False  # 운석에 미사일 적중
@@ -139,7 +150,14 @@ def runGame():
         elif x2 > padWidth - fighterWidth:
             x2 = padWidth - fighterWidth
 
+        # 전투기1 위치 이동 제어
+        if fighter1X < 0 :
+            fighter1X = 0
+        elif fighter1X > padWidth - fighterWidth:
+            fighter1X = padWidth - fighterWidth
+
         drawObject(fighter2, x2, y2)   # 비행기를 게임 화면의 (x, y) 좌표에 그림
+        drawObject(fighter1, fighter1X, y1)
         
         # 서버에 전투기2 위치를 전송
         if moving_left or moving_right:
