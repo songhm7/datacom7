@@ -4,13 +4,16 @@ import sys
 import random
 import socket
 import threading
+import os
 from time import sleep
 
 BLACK = (0,0,0)
 padWidth = 480  # 게임화면의 가로크기
 padHeight = 640 # 게임화면의 세로크기
-rockImage = ['asset/rock1.png','asset/rock2.png','asset/rock3.png','asset/rock4.png','asset/rock5.png',
-'asset/rock6.png','asset/rock7.png','asset/rock8.png','asset/rock9.png','asset/rock10.png',]
+
+# OS에 맞게 파일 경로 생성
+asset_path = os.path.join(os.path.dirname(__file__), 'asset')
+rockImage = [os.path.join(asset_path, f'rock{i}.png') for i in range(1, 11)]
 
 def acceptC():
     global client,server,addr
@@ -61,14 +64,15 @@ def initGame():
     pygame.init()
     gamePad = pygame.display.set_mode((padWidth, padHeight))
     pygame.display.set_caption("server")  # 게임 이름
-    background = pygame.image.load('asset/background.png') # 배경 그림
-    fighter1 = pygame.image.load('asset/fighter.png')    # 전투기 그림
+
+    background = pygame.image.load(os.path.join(asset_path, 'background.png')) # 배경 그림
+    fighter1 = pygame.image.load(os.path.join(asset_path, 'fighter.png'))    # 전투기 그림
     fighter1 = pygame.transform.scale(fighter1, (50, 50)) # 전투기 크기를 50x50으로 조정
-    fighter2 = pygame.image.load('asset/fighter.png')    # 전투기 그림
+    fighter2 = pygame.image.load(os.path.join(asset_path, 'fighter.png'))    # 전투기 그림
     fighter2 = pygame.transform.scale(fighter2, (50, 50)) # 전투기 크기를 50x50으로 조정
-    missile = pygame.image.load('asset/missile.png')    # 미사일 그림
+    missile = pygame.image.load(os.path.join(asset_path, 'missile.png'))    # 미사일 그림
     missile = pygame.transform.scale(missile, (20, 30)) # 미사일 크기를 20x30으로 조정
-    explosion = pygame.transform.scale(pygame.image.load('asset/explosion.png'),(55,55))    # 폭발 그림
+    explosion = pygame.transform.scale(pygame.image.load(os.path.join(asset_path, 'explosion.png')),(55,55))    # 폭발 그림
     clock = pygame.time.Clock()
 
 def runGame():
