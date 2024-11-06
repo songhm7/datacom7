@@ -25,26 +25,33 @@ def acceptC():
 #여기에 데이터를 받았을때 해야 할 일을 넣어야함
 def consoles():
     global rock_initialized, rockPassed, iscrashed, shotCount
+    buffer = ""
+
     while True:
-        msg=client.recv(1024).decode()
-        if not msg:
-            break # 서버가 연결을 끊으면 루프 종료
-        if msg.startswith("ROCK"):
-            _, rock_index, rockx, rocky = msg.split()
-            rock_index = int(rock_index)
-            rockx = int(rockx)
-            rocky = int(rocky)
-            createRockFromServer(rock_index, rockx, rocky)
-            rock_initialized = True  # 첫 번째 운석이 도착하면 초기화
-        elif msg.startswith("passed"):
-            _, passed_count = msg.split()
-            rockPassed = int(passed_count)
-        elif msg == "crash":
-            iscrashed = True
-        elif msg.startswith("explosion"):
-            _, exX, exY, shotCount = msg.split()
-            drawObject(explosion, int(exX), int(exY)) #운석 폭발 그리기
-        print(msg)
+        buffer += client.recv(1024).decode()
+        messages = buffer.split("\n") # 줄바꿈을 기준으로 메시지 구분
+        buffer = messages.pop() # 마지막 남은 덜 완성된 메시지는 버퍼에 남김
+        for msg in messages:
+            print(msg)
+            if not msg:
+                continue # 빈 메시지 건너뛰기
+            if msg.startswith("ROCK"):
+                _, rock_index, rockx, rocky = msg.split()
+                rock_index = int(rock_index)
+                rockx = int(rockx)
+                rocky = int(rocky)
+                createRockFromServer(rock_index, rockx, rocky)
+                rock_initialized = True  # 첫 번째 운석이 도착하면 초기화
+            elif msg.startswith("passed"):
+                _, passed_count = msg.split()
+                rockPassed = int(passed_count)
+            elif msg == "crash":
+                iscrashed = True
+            elif msg.startswith("explosion"):
+                _, exX, exY, shotCount = msg.split()
+                drawObject(explosion, int(exX), int(exY)) #운석 폭발 그리기
+            elif msg.startswith("fighter1"):
+                pass
         pygame.display.update()
 
 # 게임에 등장하는 객체를 드로잉
@@ -53,13 +60,13 @@ def drawObject(obj, x, y):
     gamePad.blit(obj, (x, y))
 
 def initGame():
-    global gamePad, clock, background, fighter, missile, explosion
+    global gamePad, clock, background, fighter2, missile, explosion
     pygame.init()
     gamePad = pygame.display.set_mode((padWidth, padHeight))
     pygame.display.set_caption("client")  # 게임 이름
     background = pygame.image.load('asset/background.png') # 배경 그림
-    fighter = pygame.image.load('asset/fighter.png')    # 전투기 그림
-    fighter = pygame.transform.scale(fighter, (50, 50)) # 전투기 크기를 50x50으로 조정
+    fighter2 = pygame.image.load('asset/fighter.png')    # 전투기 그림
+    fighter2 = pygame.transform.scale(fighter2, (50, 50)) # 전투기 크기를 50x50으로 조정
     missile = pygame.image.load('asset/missile.png')    # 미사일 그림
     missile = pygame.transform.scale(missile, (20, 30)) # 미사일 크기를 20x30으로 조정
     explosion = pygame.transform.scale(pygame.image.load('asset/explosion.png'),(55,55))    # 폭발 그림
@@ -67,7 +74,7 @@ def initGame():
     clock = pygame.time.Clock()
 
 def runGame():
-    global gamePad, clock, background, fighter, missile, explosion
+    global gamePad, clock, background, fighter2, missile, explosion
     global rock, rockX, rockY, rockWidth, rockHeight, rock_initialized
     global rockPassed, iscrashed, shotCount
     # 무기 좌표 리스트
@@ -77,12 +84,12 @@ def runGame():
     rock_initialized = False
 
     # 전투기 크기 및 초기 위치 설정
-    fighterSize = fighter.get_rect().size
+    fighterSize = fighter2.get_rect().size
     fighterWidth = fighterSize[0]
     fighterHeight = fighterSize[1]
-    x = padWidth * 0.6
-    y = padHeight * 0.9
-    fighterX = 0
+    x2 = padWidth * 0.6
+    y2 = padHeight * 0.9
+    fighter2X = 0
 
     # 전투기,미사일,운석 판정
     isShot = False  # 운석에 미사일 적중
@@ -93,6 +100,7 @@ def runGame():
     moving_left = moving_right = False  # 이동 상태 추적용 플래그
 
     onGame = False
+
     while not onGame:
         for event in pygame.event.get():
             if event.type in [pygame.QUIT]: # 게임 프로그램 종료
@@ -103,37 +111,39 @@ def runGame():
             if event.type in [pygame.KEYDOWN]:
                 if event.key == pygame.K_LEFT:  # 전투기 왼쪽으로 이동
                     moving_left = True
-                    fighterX -= 5
+                    fighter2X -= 5
                 
                 elif event.key == pygame.K_RIGHT:   # 전투기 오른쪽으로 이동
                     moving_right = True
-                    fighterX += 5
+                    fighter2X += 5
                 
                 elif event.key == pygame.K_SPACE:   # 미사일 발사
-                    missileX = x + (fighterWidth / 2) - (missile.get_rect().width / 2)
-                    missileY = y - fighterHeight
+                    missileX = x2 + (fighterWidth / 2) - (missile.get_rect().width / 2)
+                    missileY = y2 - fighterHeight
                     missileXY.append([missileX, missileY])
-                    msg="클라이언트 미사일 발사"
+                    msg="클라이언트 미사일 발사\n"
                     client.sendall(msg.encode()) #서버에게 내가내린명령전송
             
             if event.type in [pygame.KEYUP]:    #방향키를 떼면 전투기 멈춤
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                    fighterX = 0
+                    fighter2X = 0
                     moving_left = False
                     moving_right = False
 
         drawObject(background, 0, 0) # 배경 화면 그리기
 
         # 전투기 위치 재조정
-        x += fighterX
-        if x<0:
-            x=0
-        elif x > padWidth - fighterWidth:
-            x = padWidth - fighterWidth
+        x2 += fighter2X
+        if x2<0:
+            x2=0
+        elif x2 > padWidth - fighterWidth:
+            x2 = padWidth - fighterWidth
 
-        drawObject(fighter, x, y)   # 비행기를 게임 화면의 (x, y) 좌표에 그림
+        drawObject(fighter2, x2, y2)   # 비행기를 게임 화면의 (x, y) 좌표에 그림
+        
+        # 서버에 전투기2 위치를 전송
         if moving_left or moving_right:
-            client.sendall(f"fighter2 {str(int(x))}".encode())
+            client.sendall(f"fighter2 {str(int(x2))}\n".encode())
  
         # 운석 정보가 초기화된 이후에만 충돌 판정 수행
         if rock_initialized:

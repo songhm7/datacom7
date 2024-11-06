@@ -30,17 +30,22 @@ def acceptC():
 #여기에 데이터를 받았을때 해야 할 일을 넣어야함
 def consoles():
     global fighter2X
+    buffer = ""
     while True:
-        msg=client.recv(1024).decode()
-        print(msg)
-        if msg=="quit":
-            client.close()
-            server.close()
-            pygame.quit()
-            sys.exit()
-        elif msg.startswith("fighter2"):
-            _, f2X = msg.split()
-            fighter2X = int(f2X)
+        buffer += client.recv(1024).decode()
+        messages = buffer.split("\n") # 줄바꿈을 기준으로 메시지 구분
+        buffer = messages.pop()     # 마지막 남은 덜 완성된 메시지는 버퍼에 남김
+        for msg in messages:
+            print(msg)
+            if msg=="quit":
+                client.close()
+                server.close()
+                pygame.quit()
+                sys.exit()
+            elif msg.startswith("fighter2"):
+                _, f2X = msg.split()
+                fighter2X = int(f2X)
+        pygame.display.update()
 
 # 게임에 등장하는 객체를 드로잉
 def drawObject(obj, x, y):
@@ -92,7 +97,10 @@ def runGame():
     shotCount = 0   # 적중횟수
     rockPassed = 0  # 격추 실패 횟수
 
+    moving_left = moving_right = False  # 이동 상태 추적용 플래그
+
     onGame = False
+
     while not onGame:
         for event in pygame.event.get():
             if event.type in [pygame.QUIT]: # 게임 프로그램 종료
@@ -103,19 +111,23 @@ def runGame():
             
             if event.type in [pygame.KEYDOWN]:
                 if event.key == pygame.K_LEFT:  # 전투기 왼쪽으로 이동
+                    moving_left = True
                     fighter1X -= 5
                 elif event.key == pygame.K_RIGHT:   # 전투기 오른쪽으로 이동
+                    moving_right = True
                     fighter1X += 5
                 elif event.key == pygame.K_SPACE:   # 미사일 발사
                     missileX = x1 + (fighterWidth / 2) - (missile.get_rect().width / 2)
                     missileY = y1 - fighterHeight
                     missileXY.append([missileX, missileY])
-                    msg="서버 미사일 발사"
+                    msg="서버 미사일 발사\n"
                     client.sendall(msg.encode()) #클라이언트에게 내가내린명령전송
             
             if event.type in [pygame.KEYUP]:    #방향키를 떼면 전투기 멈춤
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                     fighter1X = 0
+                    moving_right = False
+                    moving_left = False
 
         drawObject(background, 0, 0) # 배경 화면 그리기
 
@@ -136,11 +148,16 @@ def runGame():
         if y1 < rockY + rockHeight :
             if(rockX > x1 and rockX < x1 + fighterWidth) or \
                 (rockX + rockWidth > x1 and rockX + rockWidth < x1 + fighterWidth):
-                client.sendall("crash".encode())
+                client.sendall("crash\n".encode())
                 crash()
 
-        drawObject(fighter1, x1, y1)   # 비행기를 게임 화면의 (x, y) 좌표에 그림
+        # 비행기를 게임 화면의 (x, y) 좌표에 그림
+        drawObject(fighter1, x1, y1)   
         drawObject(fighter2, fighter2X, y2)
+
+        # 서버에 전투기1 위치를 전송
+        if moving_left or moving_right:
+            client.sendall(f"fighter1 {str(int(x1))}\n".encode())
 
         # 미사일 발사 화면에 그리기
         if len(missileXY) != 0:
@@ -165,15 +182,16 @@ def runGame():
                 drawObject(missile, bx, by)
 
         rockY += rockSpeed  # 운석 아래로 움직임
-        rock_info = f"ROCK {rock_index} {rockX} {int(rockY)}"
+        rock_info = f"ROCK {rock_index} {rockX} {int(rockY)}\n"
         client.sendall(rock_info.encode())
 
+        
         # 운석이 지구로 떨어진 경우
         if rockY > padHeight:
             # 새로운 운석 (랜덤)
             rock, rockWidth, rockHeight, rockX, rockY, rock_index = createRandomRock()
             rockPassed += 1
-            client.sendall(f"passed {rockPassed}".encode())
+            client.sendall(f"passed {rockPassed}\n".encode())
             if rockPassed == 3:
                 gameOver()
                 
@@ -182,7 +200,7 @@ def runGame():
         if isShot:
             # 운석 폭발
             drawObject(explosion, rockX, rockY) #운석 폭발 그리기
-            client.sendall(f"explosion {int(rockX)} {int(rockY)} {shotCount}".encode())
+            client.sendall(f"explosion {int(rockX)} {int(rockY)} {shotCount}\n".encode())
             # 새로운 운석 (랜덤)
             rock, rockWidth, rockHeight, rockX, rockY, rock_index = createRandomRock()
             isShot = False
@@ -213,7 +231,6 @@ def createRandomRock():
     rockX = random.randrange(0, padWidth - rockWidth)
     rockY = 0
     rock_info = f"ROCK {rock_index} {rockX} {rockY}"
-    #client.sendall(rock_info.encode())
     return rock, rockWidth, rockHeight, rockX, rockY, rock_index
 
 # 운석 맞춘 개수 표시
