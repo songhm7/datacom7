@@ -31,7 +31,7 @@ def acceptC():
      # 현재 컴퓨터의 IPv4 주소를 자동으로 얻어오기
     host_ip = socket.gethostbyname(socket.gethostname())
     public_ip = get_public_ip()
-    print(f"IPv4 주소 : {host_ip}\n클라이언트 대기중...")  # 서버의 IP를 출력
+    print(f"사설 IPv4 주소 : {host_ip}\n클라이언트 대기중...")  # 서버의 IP를 출력
     server=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     server.bind((host_ip,8080))
     server.listen()
@@ -117,7 +117,7 @@ def runGame():
     # 전투기,미사일,운석 판정
     isShot = False  # 운석에 미사일 적중
     shotCount = 0   # 적중횟수
-    rockPassed = 0  # 격추 실패 횟수
+    remainLife = 3  # 남은 목숨
 
     moving_left = moving_right = False  # 이동 상태 추적용 플래그
 
@@ -222,9 +222,9 @@ def runGame():
         if rockY > padHeight:
             # 새로운 운석 (랜덤)
             rock, rockWidth, rockHeight, rockX, rockY, rock_index = createRandomRock()
-            rockPassed += 1
-            client.sendall(f"passed {rockPassed}\n".encode('utf-8'))
-            if rockPassed == 3:
+            remainLife -= 1
+            client.sendall(f"passed {remainLife}\n".encode('utf-8'))
+            if remainLife == 0:
                 gameOver()
                 
         
@@ -243,7 +243,7 @@ def runGame():
                 rockSpeed = 10
         
         writeScore(shotCount)
-        writePassed(rockPassed)
+        writePassed(remainLife)
 
         drawObject(rock, rockX, rockY)  # 운석 그리기
 
@@ -276,7 +276,7 @@ def writeScore(count):
 def writePassed(count):
     global gamePad
     font = pygame.font.Font('asset/NanumGothic.ttf', 20)
-    text = font.render('놓친 운석:' + str(count), True, (255,0,0))
+    text = font.render('남은 목숨:' + str(count), True, (255,0,0))
     gamePad.blit(text,(360,0))
 
 # 게임 메시지 출력

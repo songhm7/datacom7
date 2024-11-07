@@ -27,7 +27,7 @@ def acceptC():
 
 #여기에 데이터를 받았을때 해야 할 일을 넣어야함
 def consoles():
-    global rock_initialized, rockPassed, iscrashed, shotCount, fighter1X, client_missiles
+    global rock_initialized, remainLife, iscrashed, shotCount, fighter1X, client_missiles
     buffer = ""
     while True:
         buffer += client.recv(1024).decode('utf-8')
@@ -46,7 +46,7 @@ def consoles():
                 rock_initialized = True  # 첫 번째 운석이 도착하면 초기화
             elif msg.startswith("passed"):
                 _, passed_count = msg.split()
-                rockPassed = int(passed_count)
+                remainLife = int(passed_count)
             elif msg == "crash":
                 iscrashed = True
             elif msg.startswith("explosion"):
@@ -86,7 +86,7 @@ def initGame():
 def runGame():
     global gamePad, clock, background, fighter1, fighter2, missile, explosion
     global rock, rockX, rockY, rockWidth, rockHeight, rock_initialized
-    global rockPassed, iscrashed, shotCount, client_missiles
+    global remainLife, iscrashed, shotCount, client_missiles
     global fighter1X # 서버에서 조종하는 전투기1 위치
     
     # 미사일 좌표 초기화
@@ -111,7 +111,7 @@ def runGame():
 
     # 전투기,미사일,운석 판정
     shotCount = 0   # 적중횟수
-    rockPassed = 0  # 격추 실패 횟수
+    remainLife = 3  # 남은목숨
     iscrashed = False
     
     moving_left = moving_right = False  # 이동 상태 추적용 플래그
@@ -165,22 +165,21 @@ def runGame():
         if moving_left or moving_right:
             client.sendall(f"fighter2 {str(int(x2))}\n".encode('utf-8'))
  
-        # 운석 정보가 초기화된 이후에만 충돌 판정 수행
+        # 운석 정보가 초기화된 이후에만 실행하는 블록
         if rock_initialized:
             # 전투기가 운석과 충돌했는지 체크
             if iscrashed :
                 crash()
+            # 운석이 지구로 떨어진 경우
+            if remainLife == 0:
+                gameOver()
+            # 모든 미사일 그리기
             for mx, my in client_missiles:
                 drawObject(missile, mx, my)
-                          
-            # 운석이 지구로 떨어진 경우
-            if rockPassed == 3:
-                gameOver()
-
-            #운석 그리기
+            # 운석 그리기
             drawObject(rock, rockX, rockY)   
         writeScore(shotCount)
-        writePassed(rockPassed)
+        writePassed(remainLife)
         pygame.display.update() # 게임 화면을 다시그림
         clock.tick(60)  # 게임화면의 초당 프레임수를 60으로 설정
     
@@ -207,7 +206,7 @@ def writeScore(count):
 def writePassed(count):
     global gamePad
     font = pygame.font.Font('asset/NanumGothic.ttf', 20)
-    text = font.render('놓친 운석:' + str(count), True, (255,0,0))
+    text = font.render('남은 목숨:' + str(count), True, (255,0,0))
     gamePad.blit(text,(360,0))
 
 # 게임 메시지 출력
