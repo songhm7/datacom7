@@ -20,10 +20,10 @@ def get_public_ip():
     try:
         response = requests.get('https://api64.ipify.org?format=json')
         public_ip = response.json().get("ip")
-        # print(f"서버의 공인 IP 주소는: {public_ip}")
+        print(f"서버의 공인 IP 주소 : {public_ip}")
         return public_ip
     except requests.RequestException as e:
-        # print("공인 IP 주소를 가져오는 중 오류 발생:", e)
+        print("공인 IP 주소를 가져오는 중 오류 발생:", e)
         return None
 
 def acceptC():
@@ -31,7 +31,7 @@ def acceptC():
      # 현재 컴퓨터의 IPv4 주소를 자동으로 얻어오기
     host_ip = socket.gethostbyname(socket.gethostname())
     public_ip = get_public_ip()
-    print(f"클라이언트에서 다음 주소 입력 : {public_ip if public_ip else host_ip}")  # 서버의 IP를 출력
+    print(f"IPv4 주소 : {host_ip}\n클라이언트 대기중...")  # 서버의 IP를 출력
     server=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
     server.bind((host_ip,8080))
     server.listen()
