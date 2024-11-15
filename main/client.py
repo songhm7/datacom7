@@ -75,9 +75,9 @@ def initGame():
     pygame.display.set_caption("client")  # 게임 이름
     
     background = pygame.image.load(os.path.join(asset_path, 'background.png')) # 배경 그림
-    fighter1 = pygame.image.load(os.path.join(asset_path, 'fighter.png'))    # 전투기 그림
+    fighter1 = pygame.image.load(os.path.join(asset_path, 'red_fighter.png'))    # 전투기 그림
     fighter1 = pygame.transform.scale(fighter1, (50, 50)) # 전투기 크기를 50x50으로 조정
-    fighter2 = pygame.image.load(os.path.join(asset_path, 'fighter.png'))    # 전투기 그림
+    fighter2 = pygame.image.load(os.path.join(asset_path, 'blue_fighter.png'))    # 전투기 그림
     fighter2 = pygame.transform.scale(fighter2, (50, 50)) # 전투기 크기를 50x50으로 조정
     missile = pygame.image.load(os.path.join(asset_path, 'missile.png'))    # 미사일 그림
     missile = pygame.transform.scale(missile, (20, 30)) # 미사일 크기를 20x30으로 조정
@@ -186,16 +186,6 @@ def runGame():
             # 운석이 지구로 떨어진 경우
             if remainLife == 0:
                 gameOver()
-            '''
-            # 미사일과 운석 충돌
-            for mx,my in client_missiles:
-                missile_rect = pygame.Rect(mx, my, 20, 30)
-                rock_rect = pygame.Rect(rockX, rockY, rockWidth, rockHeight)
-                if missile_rect.colliderect(rock_rect):
-                    client_missiles.remove((mx, my))
-                    pygame.mixer.Sound.play(CrashRock_sound)#폭발 효과음 플레이
-                    break
-            '''
             # 모든 미사일 그리기
             for mx, my in client_missiles:
                 drawObject(missile, mx, my)

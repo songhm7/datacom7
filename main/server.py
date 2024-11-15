@@ -79,9 +79,9 @@ def initGame():
     pygame.display.set_caption("server")  # 게임 이름
 
     background = pygame.image.load(os.path.join(asset_path, 'background.png')) # 배경 그림
-    fighter1 = pygame.image.load(os.path.join(asset_path, 'fighter.png'))    # 전투기 그림
+    fighter1 = pygame.image.load(os.path.join(asset_path, 'red_fighter.png'))    # 전투기 그림
     fighter1 = pygame.transform.scale(fighter1, (50, 50)) # 전투기 크기를 50x50으로 조정
-    fighter2 = pygame.image.load(os.path.join(asset_path, 'fighter.png'))    # 전투기 그림
+    fighter2 = pygame.image.load(os.path.join(asset_path, 'blue_fighter.png'))    # 전투기 그림
     fighter2 = pygame.transform.scale(fighter2, (50, 50)) # 전투기 크기를 50x50으로 조정
     missile = pygame.image.load(os.path.join(asset_path, 'missile.png'))    # 미사일 그림
     missile = pygame.transform.scale(missile, (20, 30)) # 미사일 크기를 20x30으로 조정
@@ -244,6 +244,9 @@ def runGame():
             # 운석 폭발
             drawObject(explosion, rockX, rockY) #운석 폭발 그리기
             client.sendall(f"explosion {int(rockX)} {int(rockY)} {shotCount}\n".encode('utf-8'))
+            if rock_index == 3 and remainLife != 3 :
+                remainLife += 1
+                client.sendall(f"passed {remainLife}\n".encode('utf-8'))
             # 새로운 운석 (랜덤)
             rock, rockWidth, rockHeight, rockX, rockY, rock_index = createRandomRock()
             isShot = False
