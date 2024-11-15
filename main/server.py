@@ -88,6 +88,14 @@ def initGame():
     explosion = pygame.transform.scale(pygame.image.load(os.path.join(asset_path, 'explosion.png')),(55,55))    # 폭발 그림
     clock = pygame.time.Clock()
 
+    #효과음 추가
+    global Shot_sound, Crashed_sound, Explosion_sound, GameOver_sound
+    
+    Shot_sound = pygame.mixer.Sound(os.path.join(asset_path,'shot.wav'))
+    Crashed_sound = pygame.mixer.Sound(os.path.join(asset_path,'fighterCrashed.wav'))
+    Explosion_sound = pygame.mixer.Sound(os.path.join(asset_path,'explosion.wav'))
+    GameOver_sound = pygame.mixer.Sound(os.path.join(asset_path,'Electric Noise Short.wav'))
+
 def runGame():
     global gamePad, clock, background, fighter1, fighter2, missile, explosion
     global fighter2X #클라이언트에서 제어하는 전투기2의 x좌표
@@ -144,7 +152,9 @@ def runGame():
                     missileXY.append([missileX, missileY])
                     msg="서버 미사일 발사\n"
                     client.sendall(msg.encode('utf-8')) #클라이언트에게 내가내린명령전송
-            
+                    #미사일 발사 효과음 플레이
+                    pygame.mixer.Sound.play(Shot_sound)
+
             if event.type in [pygame.KEYUP]:    #방향키를 떼면 전투기 멈춤
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                     fighter1X = 0
@@ -194,11 +204,12 @@ def runGame():
                 missileXY[i][1] = bxy[1]
 
                 # 미사일이 운석을 맞추었을 경우
-                if bxy[1] < rockY:
-                    if bxy[0] > rockX and bxy[0] < rockX + rockWidth:
+                if bxy[1] <= rockY:
+                    if bxy[0] >= rockX and bxy[0] <= rockX + rockWidth:
                         missileXY.remove(bxy)
                         isShot = True
                         shotCount += 1
+                        pygame.mixer.Sound.play(Explosion_sound)#폭발 효과음 플레이
 
                 if bxy[1] <= 0: # 미사일이 화면 밖을 벗어나면
                     try:
@@ -294,11 +305,13 @@ def writeMessage(text):
 # 전투기가 운석과 충돌했을 때 메시지 출력
 def crash():
     global gamePad
+    pygame.mixer.Sound.play(Crashed_sound)#전투기와 운석 충돌한 효과음 플레이
     writeMessage('전투기 파괴!')
 
 # 게임 오버 메시지 보이기
 def gameOver():
     global gamePad
+    pygame.mixer.Sound.play(GameOver_sound)#게임 끝 효과음 플레이
     writeMessage('게임 오버!')
 
 acceptC()

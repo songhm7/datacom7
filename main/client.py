@@ -52,6 +52,7 @@ def consoles():
             elif msg.startswith("explosion"):
                 _, exX, exY, shotCount = msg.split()
                 drawObject(explosion, int(exX), int(exY)) #운석 폭발 그리기
+                pygame.mixer.Sound.play(Explosion_sound)#폭발 효과음 플레이
             elif msg.startswith("fighter1"):
                 _, f1X = msg.split()
                 fighter1X = int(f1X)
@@ -83,12 +84,22 @@ def initGame():
     explosion = pygame.transform.scale(pygame.image.load(os.path.join(asset_path, 'explosion.png')),(55,55))    # 폭발 그림
     clock = pygame.time.Clock()
 
+    #효과음 추가
+    global Shot_sound, Crashed_sound, Explosion_sound, GameOver_sound
+    
+    Shot_sound = pygame.mixer.Sound(os.path.join(asset_path,'shot.wav'))
+    Crashed_sound = pygame.mixer.Sound(os.path.join(asset_path,'fighterCrashed.wav'))
+    Explosion_sound = pygame.mixer.Sound(os.path.join(asset_path,'explosion.wav'))
+    GameOver_sound = pygame.mixer.Sound(os.path.join(asset_path,'Electric Noise Short.wav'))
+
+
+
 def runGame():
     global gamePad, clock, background, fighter1, fighter2, missile, explosion
     global rock, rockX, rockY, rockWidth, rockHeight, rock_initialized
     global remainLife, iscrashed, shotCount, client_missiles
     global fighter1X # 서버에서 조종하는 전투기1 위치
-    
+
     # 미사일 좌표 초기화
     client_missiles = []
 
@@ -136,6 +147,8 @@ def runGame():
                 
                 elif event.key == pygame.K_SPACE:   # 미사일 발사 요청
                     client.sendall("missile_request\n".encode('utf-8'))
+                    #미사일 발사 효과음 플레이
+                    pygame.mixer.Sound.play(Shot_sound)
             
             if event.type in [pygame.KEYUP]:    #방향키를 떼면 전투기 멈춤
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
@@ -173,6 +186,16 @@ def runGame():
             # 운석이 지구로 떨어진 경우
             if remainLife == 0:
                 gameOver()
+            '''
+            # 미사일과 운석 충돌
+            for mx,my in client_missiles:
+                missile_rect = pygame.Rect(mx, my, 20, 30)
+                rock_rect = pygame.Rect(rockX, rockY, rockWidth, rockHeight)
+                if missile_rect.colliderect(rock_rect):
+                    client_missiles.remove((mx, my))
+                    pygame.mixer.Sound.play(CrashRock_sound)#폭발 효과음 플레이
+                    break
+            '''
             # 모든 미사일 그리기
             for mx, my in client_missiles:
                 drawObject(missile, mx, my)
@@ -183,6 +206,7 @@ def runGame():
         pygame.display.update() # 게임 화면을 다시그림
         clock.tick(60)  # 게임화면의 초당 프레임수를 60으로 설정
     
+
     pygame.quit()   #pygame 종료
 
 # 서버로부터 받은 운석정보를 바탕으로 운석 생성
@@ -201,14 +225,12 @@ def writeScore(count):
     font = pygame.font.Font('asset/NanumGothic.ttf', 20)
     text = font.render('파괴한 운석 수:' + str(count), True, (255,255,255))
     gamePad.blit(text,(10,0))
-
 # 격추 실패 횟수 표시
 def writePassed(count):
     global gamePad
     font = pygame.font.Font('asset/NanumGothic.ttf', 20)
     text = font.render('남은 목숨:' + str(count), True, (255,0,0))
     gamePad.blit(text,(360,0))
-
 # 게임 메시지 출력
 def writeMessage(text):
     global gamePad
@@ -224,11 +246,13 @@ def writeMessage(text):
 # 전투기가 운석과 충돌했을 때 메시지 출력
 def crash():
     global gamePad
+    pygame.mixer.Sound.play(Crashed_sound)#전투기와 운석 충돌했을때 효과음 플레이
     writeMessage('전투기 파괴!')
 
 # 게임 오버 메시지 보이기
 def gameOver():
     global gamePad
+    pygame.mixer.Sound.play(GameOver_sound)
     writeMessage('게임 오버!')
 
 acceptC()
