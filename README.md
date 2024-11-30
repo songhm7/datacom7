@@ -64,8 +64,8 @@ pip install pygame requests
 
 ## 게임 플레이 영상
 
-- [게임 플레이 데모 1](./TEST1.mp4)
-- [게임 플레이 데모 2](./TEST2.mp4)
+[![게임 플레이 데모 1](http://img.youtube.com/vi/x4lFUHOPr8Q/0.jpg)](https://youtu.be/x4lFUHOPr8Q)
+[![게임 플레이 데모 2](http://img.youtube.com/vi/Qxp8PMwFfR4/0.jpg)](https://youtu.be/Qxp8PMwFfR4)
 
 ## 주의 사항
 
